@@ -14,8 +14,9 @@ This project is to use an extended Kalman Filter to fuse the radar and Lidar sen
 
 ## How to run the code
 For each project, run the following commands in Linux terminal.
-* project1: 
-(a) cd build 
-(b) cmake ..
-(c) make
-(d) ./radar_lidar_fusion ../data/lidar_radar_input1.txt ../data/result1.txt
+* project1:
+(a) mkdir build 
+(b) cd build 
+(c) cmake ..
+(d) make
+(e) ./radar_lidar_fusion ../data/lidar_radar_input1.txt ../data/result1.txt
