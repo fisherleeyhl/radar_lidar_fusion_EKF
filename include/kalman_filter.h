@@ -1,6 +1,7 @@
 #ifndef RADAR_LIDAR_FUSION_KALMAN_FILTER_H_
 #define RADAR_LIDAR_FUSION_KALMAN_FILTER_H_
 #include <functional>
+#include <iostream>
 #include <Eigen/Dense>
 
 // Function pointer for state transition model 
@@ -26,8 +27,6 @@ typedef std::function<Eigen::MatrixXd (const Eigen::VectorXd &x)>
 typedef std::tuple<StateTransitionFunc, ProcessNoiseCovFunc> MotionModel;
 
 typedef std::tuple<Eigen::MatrixXd, SensorFunc, ObservationMatrixFunc> ObservModel;
-
- 
 
 class KalmanFilter
 {
@@ -58,7 +57,7 @@ class KalmanFilter
     * @param motion_model Motion model by which the state is propagated
     */
    void Init(const Eigen::VectorXd &x, const Eigen::MatrixXd &P, 
-             MotionModel motion_model);
+             const MotionModel &motion_model);
     
    /**
     * Preduct function predicts the state and state covariance
@@ -75,7 +74,4 @@ class KalmanFilter
    void Update(const Eigen::VectorXd &z, const ObservModel &observ_model);
 };
 
-
-
-#endif
-
+#endif // RADAR_LIDAR_FUSION_KALMAN_FILTER_H_

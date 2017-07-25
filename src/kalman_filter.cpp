@@ -6,7 +6,7 @@ KalmanFilter::KalmanFilter() {}
 KalmanFilter::~KalmanFilter() {}
 
 void KalmanFilter::Init(const Eigen::VectorXd &x, const Eigen::MatrixXd &P, 
-	    		MotionModel motion_model)
+	    		const MotionModel &motion_model)
 {
   x_ = x;
   P_ = P;
@@ -51,8 +51,13 @@ void KalmanFilter::Update(const Eigen::VectorXd &z,
 
   // get predicted measurements
   z_pred = h_func(x_);
-  H = H_func(x_);
-  
+  if (H_func == NULL) {
+    H = Tools::ComputeJacobian(h_func, x_);
+  }
+  else {
+    H = H_func(x_);
+  }
+
   // measurement update
   Eigen::VectorXd y = z - z_pred;
   Eigen::MatrixXd S = H * P_ * H.transpose() + R;
