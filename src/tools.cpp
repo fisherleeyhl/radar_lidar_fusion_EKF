@@ -1,5 +1,5 @@
-#include <iostream>
 #include "tools.h"
+#include <iostream>
 
 VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
                               const vector<VectorXd> &ground_truth) {

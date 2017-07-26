@@ -13,13 +13,12 @@ void KalmanFilter::Init(const Eigen::VectorXd &x, const Eigen::MatrixXd &P,
   motion_model_ = motion_model;
 }
  
+/**
+ * Function pointers are used to specify the model for state propagation
+ * and the function for process noise covariance computation
+ */   
 void KalmanFilter::Predict(float delta_T)
-{
-  /**
-   * Function pointers are used to specify the model that is used to
-   * propagte the states and the function that is used to compute
-   * process noise covariance
-   */    
+{ 
   Eigen::MatrixXd F;
   StateTransitionFunc state_trans_func;
   ProcessNoiseCovFunc process_noise_cov_func;
@@ -33,14 +32,14 @@ void KalmanFilter::Predict(float delta_T)
   P_ = F * P_ * F.transpose() + Q;
 }
 
+/**
+ * Function pointers are used to specify the model that maps the states to 
+ * the measurements and the functions for the computation of the observation 
+ * matrix and the measurement noise covariance
+ */  
 void KalmanFilter::Update(const Eigen::VectorXd &z, 
 			  const ObservModel &observ_model)
 {
-  /**
-   * Function pointers are used to specify the model that is used to
-   * map the states to the measurements and the functions that are used 
-   * to compute the observation matrix and the measurement noise covariance
-   */  
   Eigen::MatrixXd R;
   Eigen::MatrixXd H;
   Eigen::VectorXd z_pred;

@@ -6,7 +6,7 @@
 
 // Function pointer for state transition model 
 // that computes the predicted state vector and 
-// the state transition matrix using elapsed time
+// the state transition matrix based on elapsed time
 // and previous state vector
 typedef std::function<std::tuple<Eigen::VectorXd, Eigen::MatrixXd>
 	(float delta_T, const Eigen::VectorXd &x)> StateTransitionFunc;
@@ -16,7 +16,7 @@ typedef std::function<std::tuple<Eigen::VectorXd, Eigen::MatrixXd>
 typedef std::function<Eigen::MatrixXd (
 	float delta_T, const Eigen::VectorXd &x)> ProcessNoiseCovFunc;
 
-// Function pointer that computes the predicted measurement
+// Function pointer that maps the states to the measurements
 typedef std::function<Eigen::VectorXd (const Eigen::VectorXd &x)> 
 	SensorFunc;
 
@@ -24,8 +24,12 @@ typedef std::function<Eigen::VectorXd (const Eigen::VectorXd &x)>
 typedef std::function<Eigen::MatrixXd (const Eigen::VectorXd &x)> 
 	ObservationMatrixFunc;
 
+// Function pointer that combines state transition model and process
+// noise covariance
 typedef std::tuple<StateTransitionFunc, ProcessNoiseCovFunc> MotionModel;
 
+// Function pointer that combines measurement noise covariance, sensor model
+// and observation matrix
 typedef std::tuple<Eigen::MatrixXd, SensorFunc, ObservationMatrixFunc> ObservModel;
 
 class KalmanFilter
@@ -60,15 +64,15 @@ class KalmanFilter
              const MotionModel &motion_model);
     
    /**
-    * Preduct function predicts the state and state covariance
-    * using the state transistion model
-    * @param delta_T Time elapsed between k and k+1 in second
+    * Predict function predicts the state and state covariance
+    * using the motion model
+    * @param delta_T Time elapsed between previous and current time stamps in second
     */
    void Predict(float delta_T);
 
    /**
     * Update function performs the measurement update for Kalman Filter
-    * @param z Measurement obtained at k+1
+    * @param z Measurement obtained at current time stamp
     * @param observ_model Model that maps the states to the measurements
     */
    void Update(const Eigen::VectorXd &z, const ObservModel &observ_model);

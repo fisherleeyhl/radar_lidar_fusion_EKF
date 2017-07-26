@@ -8,7 +8,6 @@
 
 #include <Eigen/Dense>
 
-//#include "config.h"
 #include "measurement_package.h"
 #include "ground_truth_package.h"
 #include "fusion_radar_lidar.h"
@@ -16,7 +15,7 @@
 #include "tools.h"
 
 
-// Configuration of filter
+// Configurations for the filter
 // State transition model
 const auto state_trans_func = [](float delta_t, const Eigen::VectorXd &x) {
   Eigen::MatrixXd F = Eigen::MatrixXd(4, 4);
@@ -32,6 +31,7 @@ const auto state_trans_func = [](float delta_t, const Eigen::VectorXd &x) {
 // standard deviation of continuous process noise
 const float q_x = 7;
 const float q_y = 7; 
+// Process noise covariance matrix
 const auto process_noise_func = [](float dt, const Eigen::VectorXd &x) {
   Eigen::MatrixXd Q = Eigen::MatrixXd(4, 4);
   float dt2, dt3, dt4;
@@ -45,6 +45,9 @@ const auto process_noise_func = [](float dt, const Eigen::VectorXd &x) {
        0, q_y * dt3 / 2, 0, q_y * dt2;
   return Q;
 };
+
+// Motion model that combines state transition model and 
+// process noise covariance matrix
 const MotionModel motion_model = MotionModel(state_trans_func, 
 					     process_noise_func);
 
@@ -63,6 +66,7 @@ const auto lidar_func = [](const Eigen::VectorXd &x) {
   z << x(0), x(1);
   return z;
 };
+// Lidar observation model
 const ObservModel observ_model_lidar(R_lidar, lidar_func, 
 				    obsev_matrix_func_lidar);
 
@@ -110,10 +114,11 @@ const auto radar_func = [](const Eigen::VectorXd &x) {
        (px*vx + py*vy)/sqrt(px*px + py*py);
   return z;
 };
+// Radar observation model
 const ObservModel observ_model_radar(R_radar, radar_func, 
 				    obsev_matrix_func_radar);
 
-// Initial state error covariance
+// Initial state error covariance.
 const Eigen::MatrixXd P_0 = (Eigen::MatrixXd(4,4) << 50, 0, 0, 0,
 						     0, 50, 0, 0,
 						     0, 0, 100, 0,
@@ -121,7 +126,8 @@ const Eigen::MatrixXd P_0 = (Eigen::MatrixXd(4,4) << 50, 0, 0, 0,
 
 // Function prototypes
 /**
- * Check whether the input command line arguments are valid
+ * CheckInputs function checks whether the input 
+ * command line arguments are valid.
  * If they are invalid, display help info.
  * @param argc Number of comannd line arguments
  * @param argv Array of command line strings
@@ -129,27 +135,36 @@ const Eigen::MatrixXd P_0 = (Eigen::MatrixXd(4,4) << 50, 0, 0, 0,
 void CheckInputs(int argc, char **argv);
 
 /**
- * Check whether the input and output files are valid
- * @param argc Number of comannd line arguments
- * @param argv Array of command line strings
+ * CheckFiles function checks whether the input and output files are valid.
  */
 void CheckFiles(const std::ifstream &input_file, char *input_file_name, 
 		const std::ofstream &output_file, char *output_file_name);
 
 /*
- *
+ * InitializeEKF function initializes the EKF
  */
 bool InitializeEKF(FusionEKF &fusion_EKF, MeasurementPackage &measurement_pack);
 
+/* WriteToFile function writes state estimates, measurements, and ground 
+ * truth data to a result file.
+ * @param output_file Stream for write data to a file
+ * @param fusion_EKF Object contains the state estimates after fusion
+ * @param measurement_package_vec Measurement package
+ * @param gt_package_vec Ground truth data package
+ */
+void WriteToFile(std::ofstream &output_file, const FusionEKF &fusion_EKF, 
+		 const std::vector<MeasurementPackage> &measurement_package_vec, 
+		 const std::vector<GroundTruthPackage> &gt_package_vec, size_t i);
+
 int main(int argc, char **argv)
 {
-  // Load input radar and lidar data
+  // Load input radar and lidar data.
   CheckInputs(argc, argv);
   std::ifstream input_file(argv[1], std::ifstream::in);
   std::ofstream output_file(argv[2], std::ofstream::out);
   CheckFiles(input_file, argv[1], output_file, argv[2]);
 
-  // Go through the input data file and store data to vectors
+  // Go through the input data file and store data to measurement package
   std::vector<MeasurementPackage> measurement_package_vec;
   std::vector<GroundTruthPackage> gt_package_vec;
   std::string line;
@@ -192,7 +207,7 @@ int main(int argc, char **argv)
       measurement_package_vec.push_back(measure_package);
     }
 
-    // Read ground truth data and store data to vectors
+    // Load ground truth data and store data to ground truth package
     GroundTruthPackage gt_package;
     float gt_px;
     float gt_py;
@@ -207,7 +222,7 @@ int main(int argc, char **argv)
     gt_package_vec.push_back(gt_package);
   }
 
-  // Run EKF based fusion
+  // Run EKF based fusing radar and lidar data
   std::vector<Eigen::VectorXd> estimates;
   std::vector<Eigen::VectorXd> ground_truth;
   FusionEKF fusion_EKF;
@@ -230,30 +245,9 @@ int main(int argc, char **argv)
 				    observ_model_lidar);
     }
 
-    // Output the state estimates
-    output_file << fusion_EKF.ekf_.x_(0) << "\t";
-    output_file << fusion_EKF.ekf_.x_(1) << "\t";
-    output_file << fusion_EKF.ekf_.x_(2) << "\t";
-    output_file << fusion_EKF.ekf_.x_(3) << "\t";
-
-    // Output the measurements
-    if (measurement_package_vec[i].sensor_type_ == SensorType::kLIDAR) {
-      // Output the estimation
-      output_file << measurement_package_vec[i].raw_measurements_(0) << "\t";
-      output_file << measurement_package_vec[i].raw_measurements_(1) << "\t";
-    } else if (measurement_package_vec[i].sensor_type_ == SensorType::kRADAR) {
-      // Output the estimation in the cartesian coordinates
-      float rho = measurement_package_vec[i].raw_measurements_(0);
-      float phi = measurement_package_vec[i].raw_measurements_(1);
-      output_file << rho * cos(phi) << "\t"; // p1_meas
-      output_file << rho * sin(phi) << "\t"; // ps_meas
-    }
-
-    // Output the ground truth packages
-    output_file << gt_package_vec[i].gt_(0) << "\t";
-    output_file << gt_package_vec[i].gt_(1) << "\t";
-    output_file << gt_package_vec[i].gt_(2) << "\t";
-    output_file << gt_package_vec[i].gt_(3) << "\n";    
+    // Store the results to file
+    WriteToFile(output_file, fusion_EKF, measurement_package_vec, 
+		gt_package_vec, i);
 
     estimates.push_back(fusion_EKF.ekf_.x_);
     ground_truth.push_back(gt_package_vec[i].gt_);
@@ -319,7 +313,7 @@ void CheckFiles(const std::ifstream &input_file, char *input_file_name,
 }
 
 /*
- *
+ * Initialize the EKF
  */
 bool InitializeEKF(FusionEKF &fusion_EKF, MeasurementPackage &measurement_pack)
 {
@@ -343,4 +337,37 @@ bool InitializeEKF(FusionEKF &fusion_EKF, MeasurementPackage &measurement_pack)
   }
   fusion_EKF.Init(x_0, P_0, motion_model, measurement_pack.timestamp_);
   return true;
+}
+
+/*
+ * Write result to file
+ */
+void WriteToFile(std::ofstream &output_file, const FusionEKF &fusion_EKF, 
+		 const std::vector<MeasurementPackage> &measurement_package_vec, 
+		 const std::vector<GroundTruthPackage> &gt_package_vec, size_t i)
+{
+   // Output the state estimates
+    output_file << fusion_EKF.ekf_.x_(0) << "\t";
+    output_file << fusion_EKF.ekf_.x_(1) << "\t";
+    output_file << fusion_EKF.ekf_.x_(2) << "\t";
+    output_file << fusion_EKF.ekf_.x_(3) << "\t";
+
+    // Output the measurements
+    if (measurement_package_vec[i].sensor_type_ == SensorType::kLIDAR) {
+      // Output the estimation
+      output_file << measurement_package_vec[i].raw_measurements_(0) << "\t";
+      output_file << measurement_package_vec[i].raw_measurements_(1) << "\t";
+    } else if (measurement_package_vec[i].sensor_type_ == SensorType::kRADAR) {
+      // Output the estimation in the cartesian coordinates
+      float rho = measurement_package_vec[i].raw_measurements_(0);
+      float phi = measurement_package_vec[i].raw_measurements_(1);
+      output_file << rho * cos(phi) << "\t"; // p1_meas
+      output_file << rho * sin(phi) << "\t"; // ps_meas
+    }
+
+    // Output the ground truth packages
+    output_file << gt_package_vec[i].gt_(0) << "\t";
+    output_file << gt_package_vec[i].gt_(1) << "\t";
+    output_file << gt_package_vec[i].gt_(2) << "\t";
+    output_file << gt_package_vec[i].gt_(3) << "\n";
 }

@@ -1,5 +1,5 @@
-#ifndef TOOLS_H_
-#define TOOLS_H_
+#ifndef RADAR_LIDAR_FUSION_TOOLS_H_
+#define RADAR_LIDAR_FUSION_TOOLS_H_
 #include <vector>
 #include "Eigen/Dense"
 
@@ -10,7 +10,9 @@ using namespace std;
 class Tools {
 public:
   /**
-  * A helper method to calculate RMSE.
+  * CalculateRMSE function calculates the RMSE of state estimates
+  * @param estimation State estimates
+  * @param ground_truth Ground truth
   */
   static VectorXd CalculateRMSE(const vector<VectorXd> &estimations, const vector<VectorXd> &ground_truth);
   template<class Func>
@@ -33,6 +35,4 @@ public:
   };
 };
 
-
-
-#endif /* TOOLS_H_ */
+#endif /* RADAR_LIDAR_FUSION_TOOLS_H_ */

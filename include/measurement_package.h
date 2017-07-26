@@ -18,5 +18,3 @@ class MeasurementPackage
 };
 
 #endif // RADAR_LIDAR_FUSION_MEASUREMENT_PACKAGE_H_
-
-

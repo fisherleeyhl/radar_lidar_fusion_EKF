@@ -5,18 +5,19 @@ This project is to use an extended Kalman Filter to fuse the radar and Lidar sen
 ## Repo content
 
 * src contains the project source files.
-  (a) main.cpp entry point of the project, reads the data, calls kalman filter to fuse the radar and lidar measurements.
-  (b) kalman_filter.cpp defines functions for Kalman Filter.
+  (a) main.cpp entry point of the project, loads the data, specifies motion and observation models, calls kalman filter to fuse the radar and lidar measurements.
+  (b) fusion_radar_lidar.cpp initializes the filter, calls the prediction and update of the kalman filter.
+  (c) kalman_filter.cpp defines initialization, prediction, and update functions for the Kalman Filter.
+  (d) tools.cpp computes RMSE and Jacobian matrix.
 * include contains the project header files.
-  (a) kalman_filter.h declares functions for Kalman Filter.
-* data contains the input files and the generated result files.
-* docs contains some documentation files.
+* data contains two example input files.
+* docs contains a documentation file specifying the input and ouput data file format.
+* result contains the generated result files
 
 ## How to run the code
-For each project, run the following commands in Linux terminal.
-* project1:
-(a) mkdir build 
-(b) cd build 
-(c) cmake ..
-(d) make
-(e) ./radar_lidar_fusion ../data/lidar_radar_input1.txt ../data/result1.txt
+For the project, run the following commands in Linux terminal.
+* mkdir build 
+* cd build 
+* cmake ..
+* make
+* ./radar_lidar_fusion ../data/lidar_radar_input1.txt ../result/result1.txt
